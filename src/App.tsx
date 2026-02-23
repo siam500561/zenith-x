@@ -1,5 +1,11 @@
 import Lenis from "lenis";
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 const imagePaths = Array.from(
@@ -9,6 +15,7 @@ const imagePaths = Array.from(
 
 function App() {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sequenceRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +71,12 @@ function App() {
         await loadBatch(i);
         // Update state progressively so first frames can render sooner
         setImages([...loadedImages]);
+
+        // Hide loading screen after the first batch is loaded
+        if (i === 0) {
+          // Small delay to ensure smooth transition and prevent flashing if cached
+          setTimeout(() => setIsLoading(false), 800);
+        }
       }
     };
 
@@ -166,8 +179,51 @@ function App() {
 
   return (
     <div className="bg-[#050505] text-white font-sans selection:bg-[#d4c5b9] selection:text-black">
+      {/* Loading Screen */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050505]"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center"
+            >
+              <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-widest mb-6">
+                ZENITH X
+              </h1>
+              <div className="w-48 h-[1px] bg-neutral-800 overflow-hidden relative">
+                <motion.div
+                  className="absolute top-0 left-0 h-full bg-white"
+                  initial={{ width: "0%", x: "-100%" }}
+                  animate={{ width: "50%", x: "200%" }}
+                  transition={{
+                    duration: 1.5,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                  }}
+                />
+              </div>
+              <p className="mt-6 text-xs tracking-widest uppercase text-neutral-500">
+                Preparing Experience
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex flex-col md:flex-row justify-between items-center px-4 md:px-8 py-4 md:py-6 mix-blend-difference gap-4 md:gap-0">
+      <motion.nav
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isLoading ? 0 : 1 }}
+        transition={{ duration: 1, delay: 0.5 }}
+        className="fixed top-0 left-0 w-full z-50 flex flex-col md:flex-row justify-between items-center px-4 md:px-8 py-4 md:py-6 mix-blend-difference gap-4 md:gap-0"
+      >
         <div className="font-serif text-xl md:text-2xl tracking-widest font-bold">
           ZENITH X
         </div>
@@ -182,14 +238,14 @@ function App() {
             Specs
           </a>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
       <section className="h-screen flex flex-col items-center justify-center relative overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+          animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 50 : 0 }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
           className="text-center z-10"
         >
           <h1 className="font-serif text-7xl md:text-9xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-500">
@@ -202,7 +258,7 @@ function App() {
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: isLoading ? 0 : 1 }}
           transition={{ delay: 1.5, duration: 1 }}
           className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
