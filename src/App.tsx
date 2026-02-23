@@ -36,22 +36,38 @@ function App() {
     };
   }, []);
 
-  // Preload images
+  // Preload images in batches to prevent network congestion
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
-    let loadedCount = 0;
+    const BATCH_SIZE = 5; // Load 5 images at a time
 
-    imagePaths.forEach((src, index) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        loadedCount++;
-        if (loadedCount === imagePaths.length) {
-          setImages(loadedImages);
-        }
-      };
-      loadedImages[index] = img;
-    });
+    const loadBatch = async (startIndex: number): Promise<void> => {
+      const endIndex = Math.min(startIndex + BATCH_SIZE, imagePaths.length);
+      const batchPromises: Promise<void>[] = [];
+
+      for (let i = startIndex; i < endIndex; i++) {
+        const promise = new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = imagePaths[i];
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // Continue even if an image fails
+          loadedImages[i] = img;
+        });
+        batchPromises.push(promise);
+      }
+
+      await Promise.all(batchPromises);
+    };
+
+    const loadAllImages = async () => {
+      for (let i = 0; i < imagePaths.length; i += BATCH_SIZE) {
+        await loadBatch(i);
+        // Update state progressively so first frames can render sooner
+        setImages([...loadedImages]);
+      }
+    };
+
+    loadAllImages();
   }, []);
 
   // Scroll animation for the sequence
