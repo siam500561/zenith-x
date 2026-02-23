@@ -53,13 +53,22 @@ function App() {
       const batchPromises: Promise<void>[] = [];
 
       for (let i = startIndex; i < endIndex; i++) {
-        const promise = new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = imagePaths[i];
-          img.onload = () => resolve();
-          img.onerror = () => resolve(); // Continue even if an image fails
-          loadedImages[i] = img;
-        });
+        // Use fetch to load images as blobs to prevent the browser tab from spinning
+        const promise = fetch(imagePaths[i])
+          .then((res) => res.blob())
+          .then((blob) => {
+            return new Promise<void>((resolve) => {
+              const img = new Image();
+              img.src = URL.createObjectURL(blob);
+              img.onload = () => {
+                loadedImages[i] = img;
+                resolve();
+              };
+              img.onerror = () => resolve(); // Continue even if an image fails
+            });
+          })
+          .catch(() => {}); // Continue even if fetch fails
+
         batchPromises.push(promise);
       }
 
@@ -128,7 +137,29 @@ function App() {
     if (!ctx) return;
 
     const render = (index: number) => {
-      const img = images[Math.round(index)];
+      const targetIndex = Math.round(index);
+      let img = images[targetIndex];
+
+      // Frame Fallback System: If current frame isn't loaded, find the closest previous loaded frame
+      if (!img) {
+        for (let i = targetIndex - 1; i >= 0; i--) {
+          if (images[i]) {
+            img = images[i];
+            break;
+          }
+        }
+      }
+
+      // If still no image (e.g., scrolling up before frame 0 is loaded), try finding the next available
+      if (!img) {
+        for (let i = targetIndex + 1; i < images.length; i++) {
+          if (images[i]) {
+            img = images[i];
+            break;
+          }
+        }
+      }
+
       if (!img) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
