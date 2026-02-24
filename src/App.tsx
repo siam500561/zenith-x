@@ -730,7 +730,7 @@ function App() {
             inaugural Founders Edition.
           </p>
 
-          <button className="group relative inline-flex items-center justify-center px-12 py-5 text-sm tracking-[0.2em] uppercase overflow-hidden bg-black text-white transition-all duration-500 hover:bg-gradient-to-r hover:from-[#d4af37] hover:to-[#f9e596] hover:text-black hover:shadow-[0_0_30px_rgba(249,229,150,0.4)]">
+          <button className="group relative inline-flex cursor-pointer items-center justify-center px-12 py-5 text-sm tracking-[0.2em] uppercase overflow-hidden bg-black text-white transition-all duration-500">
             <span className="relative z-10 font-medium">Pre-Order Now</span>
           </button>
         </motion.div>
